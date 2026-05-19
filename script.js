@@ -2,6 +2,9 @@ function createPlayer(name,marker){
   return {name, marker};
 }
 
+const xIcon=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+
+const oIcon=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-icon lucide-circle"><circle cx="12" cy="12" r="10"/></svg>`;
 
 const gameBoard=(function(){
   let board=["-","-","-",
@@ -52,63 +55,86 @@ const gameBoard=(function(){
 })();
 
 const gameController=(function(){
-  const Player1= createPlayer("Player 1", "x");
-  const Player2= createPlayer("Player 2", "o");
+  const Player1= createPlayer("Player 1", xIcon);
+  const Player2= createPlayer("Player 2", oIcon);
   let moveCount=0;
   let gameOver=false;
   let currPlayer=Player1;
-
+  let currState="Player 1's Move"
+  const getCurrentPlayer=()=>{
+    return currPlayer;
+  }
+  const getState=()=>{
+    return currState;
+  }
   const reset=()=>{
     gameBoard.resetBoard();
     moveCount=0;
     gameOver=false;
     currPlayer=Player1;
+    currState="Player 1's Move";
   }
+
+
   const playTurn=(index)=>{
-    const marker=currPlayer.marker;
-    if(!gameOver){
-      if(gameBoard.validMove(index) && moveCount<9){
-        gameBoard.playMove(index, marker);
-        moveCount++;
-        if(gameBoard.checkWinner()=="-" && moveCount<9){
-        currPlayer=currPlayer==Player1?Player2:Player1;
-        }
-        else{
-        gameOver=true;
-        }
-      }
-      else{
-        console.log("Invalid move");
-      }
-      console.log(gameBoard.displayBoard());
+    if(!gameBoard.validMove(index)||gameOver){
+      return false;
     }
-    
-    if(gameOver){
+      gameBoard.playMove(index, currPlayer.marker);
+      moveCount++;
+      if(gameBoard.checkWinner()=="-" && moveCount<9){
+      currPlayer=currPlayer==Player1?Player2:Player1;
+      currState=currPlayer==Player1?"Player 1's Move":"Player 2's Move";
+      }
+
+      else{
+      gameOver=true;
       const winner= gameBoard.checkWinner();
       if(winner=="-"){
-        console.log("It's a Tie!");
-        reset();
-      }
-      else if(winner=="x"){
-        console.log(`${Player1.name} wins!`);
-        console.log(gameBoard.displayBoard());
-        reset();
+        currState="It's a Tie";
 
       }
-      else if(winner=="o"){
-        console.log(`${Player2.name} wins!`);
-        console.log(gameBoard.displayBoard());
-        reset()
+      else if(winner==xIcon){
+        currState=`${Player1.name} wins!`;
+
+      }
+      else if(winner==oIcon){
+        currState=`${Player2.name} wins!`;
       }
     }
-    
-    
-    
-  }
+    return true;
+    };
 
-  return {playTurn};
+  return {playTurn, reset, getCurrentPlayer, getState};
 
 })();
+
+
+const boxes=Array.from(document.querySelectorAll(".box"));
+
+for(const box of boxes){
+  box.addEventListener("click", (event)=>{
+    const player=gameController.getCurrentPlayer();
+    const successful= gameController.playTurn(Number(event.target.id)-1);
+    if(successful){
+      box.innerHTML=player.marker;
+    }
+    state.textContent = gameController.getState();
+  })
+}
+const reset=document.querySelector(".reset");
+  reset.addEventListener("click",(event)=>{
+    gameController.reset();
+    for(const box of boxes){
+      box.innerHTML="";
+    }
+    state.innerHTML=gameController.getState();
+  });
+const state=document.querySelector(".state");
+
+state.innerHTML=gameController.getState();
+
+
 
 
 
